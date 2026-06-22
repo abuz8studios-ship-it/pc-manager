@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>ABU · Master PC Manager</title>
+<style>
+  :root{
+    --bg:#0a0a0f; --panel:#111217; --panel2:#16171e; --fg:#e6e8ec; --dim:#6b7280; --line:#1f2230;
+    --accent:#4f9cff; --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+    --zait:#00ff88; --qadir:#ff4444;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font:13px/1.5 ui-sans-serif,system-ui,Segoe UI,Inter,sans-serif;background:var(--bg);color:var(--fg);padding:16px}
+  header{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  header h1{font-size:15px;font-weight:700;letter-spacing:.04em}
+  header .badge{background:#1b2434;color:var(--accent);padding:3px 8px;border-radius:4px;font-size:10px;letter-spacing:.08em}
+  nav{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+  nav button{background:var(--panel);color:var(--dim);border:1px solid var(--line);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500}
+  nav button.active{background:var(--panel2);color:var(--fg);border-color:#2a3040}
+  nav button:hover{color:var(--fg)}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .card h3{font-size:10px;color:var(--dim);font-weight:500;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .card .v{font-size:22px;font-weight:700}
+  .card .sub{font-size:11px;color:var(--dim);margin-top:3px}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+  .panel h2{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;font-weight:600}
+  table{width:100%;font-size:12px;border-collapse:collapse}
+  th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+  .chip{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px}
+  .chip.ok{background:#0a3a1a;color:var(--ok)}
+  .chip.err{background:#3a0a0a;color:var(--err)}
+  .chip.warn{background:#3a2a0a;color:var(--warn)}
+  .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .heat{display:grid;grid-template-columns:repeat(30,14px);gap:3px;margin-top:8px}
+  .heat span{width:14px;height:14px;background:#1a1d29;border-radius:2px}
+  .heat span[data-v="1"]{background:#1e3a5f}.heat span[data-v="2"]{background:#2f5a88}.heat span[data-v="3"]{background:#4f9cff}.heat span[data-v="4"]{background:#89c1ff}
+  button.act{background:var(--accent);color:#000;border:0;padding:8px 14px;border-radius:5px;cursor:pointer;font-weight:600;font-size:11px;margin-right:6px}
+  button.act.danger{background:var(--err);color:#fff}
+  pre.out{background:#000;color:#0f0;padding:10px;border-radius:4px;font-size:11px;max-height:220px;overflow:auto;margin-top:8px}
+  .dim{color:var(--dim)}
+  .row{display:flex;gap:12px;align-items:center}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>ABU · MASTER PC MANAGER</h1>
+  <span class="badge">v0.1</span>
+  <span class="dim" id="hdr-time" style="margin-left:auto"></span>
+</header>
+
+<nav>
+  <button data-t="overview" class="active">Overview</button>
+  <button data-t="health">Health</button>
+  <button data-t="storage">Storage</button>
+  <button data-t="tokens">Tokens</button>
+  <button data-t="ai">AI Frameworks</button>
+  <button data-t="agents">Agents</button>
+  <button data-t="clawboard">Clawboard</button>
+  <button data-t="toolbox">Toolbox</button>
+</nav>
+
+<section id="view-overview">
+  <div class="grid">
+    <div class="card"><h3>Memory</h3><div class="v" id="ov-mem">—</div><div class="sub" id="ov-mem-sub"></div></div>
+    <div class="card"><h3>Uptime</h3><div class="v" id="ov-up">—</div><div class="sub">hours</div></div>
+    <div class="card"><h3>Agents alive</h3><div class="v" id="ov-ag">—</div><div class="sub" id="ov-ag-sub"></div></div>
+    <div class="card"><h3>AI frameworks alive</h3><div class="v" id="ov-ai">—</div><div class="sub" id="ov-ai-sub"></div></div>
+    <div class="card"><h3>Temp files</h3><div class="v" id="ov-tmp">—</div><div class="sub">GB recoverable</div></div>
+    <div class="card"><h3>Startup programs</h3><div class="v" id="ov-start">—</div></div>
+    <div class="card"><h3>Tokens today</h3><div class="v" id="ov-tok">—</div><div class="sub" id="ov-tok-sub"></div></div>
+    <div class="card"><h3>Cost (lifetime)</h3><div class="v" id="ov-cost">—</div><div class="sub">USD est.</div></div>
+  </div>
+  <div class="panel"><h2>Last 30 days activity</h2><div class="heat" id="heat"></div></div>
+</section>
+
+<section id="view-health" hidden>
+  <div class="panel"><h2>System health</h2><div id="health-body">loading…</div></div>
+</section>
+
+<section id="view-storage" hidden>
+  <div class="panel"><h2>Drives</h2><table id="drives"><thead><tr><th>Drive</th><th>Used GB</th><th>Free GB</th><th>Total GB</th><th>Used %</th></tr></thead><tbody></tbody></table></div>
+  <div class="panel"><h2>Biggest directories (E:\, ~)</h2><table id="bigdirs"><thead><tr><th>Path</th><th>Size GB</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="view-tokens" hidden>
+  <div class="grid">
+    <div class="card"><h3>Active days</h3><div class="v" id="t-days">—</div></div>
+    <div class="card"><h3>Calls</h3><div class="v" id="t-calls">—</div></div>
+    <div class="card"><h3>Tokens</h3><div class="v" id="t-tok">—</div></div>
+    <div class="card"><h3>Est cost USD</h3><div class="v" id="t-cost">—</div></div>
+  </div>
+  <div class="panel"><h2>Burn by provider × model × agent (lifetime)</h2><table id="burn"><thead><tr><th>Agent</th><th>Provider</th><th>Model</th><th>Calls</th><th>Tokens</th><th>Cost $</th></tr></thead><tbody></tbody></table></div>
+  <div class="panel"><h2>Local-vs-cloud evaluator</h2><table id="lvc"><thead><tr><th>Verdict</th><th>Count</th></tr></thead><tbody></tbody></table><p class="dim" style="margin-top:8px">"local_equal" + "local_close" = tasks you can safely migrate off cloud.</p></div>
+</section>
+
+<section id="view-ai" hidden>
+  <div class="panel"><h2>Cloud AI providers (your keys)</h2><table id="cloud-table"><thead><tr><th>Provider</th><th>Status</th><th>HTTP</th><th>Models</th><th>Detail</th></tr></thead><tbody></tbody></table></div>
+  <div class="panel"><h2>Local AI frameworks</h2><table id="ai-table"><thead><tr><th>Framework</th><th>Port</th><th>Status</th><th>Detail</th></tr></thead><tbody></tbody></table></div>
+  <div class="panel"><h2>Ollama models</h2><table id="oll"><thead><tr><th>Model</th><th>Size GB</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="view-agents" hidden>
+  <div class="panel"><h2>Agentic frameworks detected</h2><table id="ag"><thead><tr><th>Framework</th><th>Path</th><th>Skills</th><th>Memory MB</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+  <div class="panel"><h2>Watchdogs / scheduled tasks</h2><table id="tasks"><thead><tr><th>Task</th><th>State</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="view-clawboard" hidden>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="panel" style="border-left:3px solid var(--zait)">
+      <h2 style="color:var(--zait)">OPENCLAW · ZAIT</h2>
+      <div class="row" style="margin-bottom:10px"><span id="oc-status" class="chip err">checking…</span><span class="dim" id="oc-port">:18789</span></div>
+      <div style="margin-bottom:10px">
+        <button class="act" onclick="claw('openclaw','start')">Start</button>
+        <button class="act" onclick="claw('openclaw','restart')">Restart</button>
+        <button class="act danger" onclick="claw('openclaw','stop')">Stop</button>
+      </div>
+      <table style="margin-bottom:10px"><tr><th>Watchdog</th><td id="oc-watchdog">—</td></tr><tr><th>Processes</th><td id="oc-procs">—</td></tr></table>
+      <h3 class="dim" style="font-size:10px;margin:10px 0 4px">LAST LOG</h3>
+      <pre class="out" id="oc-log">—</pre>
+    </div>
+    <div class="panel" style="border-left:3px solid var(--qadir)">
+      <h2 style="color:var(--qadir)">HERMES · QADIR</h2>
+      <div class="row" style="margin-bottom:10px"><span id="hm-status" class="chip err">checking…</span><span class="dim" id="hm-svc">hermes-qadir.service</span></div>
+      <div style="margin-bottom:10px">
+        <button class="act" onclick="claw('hermes','start')">Start</button>
+        <button class="act" onclick="claw('hermes','restart')">Restart</button>
+        <button class="act danger" onclick="claw('hermes','stop')">Stop</button>
+        <button class="act" style="background:var(--dim);color:#fff" onclick="claw('hermes','status')">Status</button>
+      </div>
+      <table style="margin-bottom:10px"><tr><th>Systemd</th><td id="hm-systemd">—</td></tr><tr><th>Processes</th><td id="hm-procs">—</td></tr></table>
+      <h3 class="dim" style="font-size:10px;margin:10px 0 4px">LAST LOG</h3>
+      <pre class="out" id="hm-log">—</pre>
+    </div>
+  </div>
+  <div class="panel"><h2>Action result</h2><pre class="out" id="claw-out">Idle.</pre></div>
+</section>
+
+<section id="view-toolbox" hidden>
+  <div class="panel"><h2>Cleanup</h2>
+    <button class="act" onclick="act('cleanup-temp', {})">Purge TEMP files</button>
+    <pre class="out" id="act-out">Idle.</pre>
+  </div>
+  <div class="panel"><h2>Restart service</h2>
+    <button class="act" onclick="act('restart-service', {service:'mission-control'})">Mission Control</button>
+    <button class="act" onclick="act('restart-service', {service:'zait'})">Zait watchdog</button>
+    <button class="act" onclick="act('restart-service', {service:'lazy-protocol'})">Lazy Protocol</button>
+  </div>
+  <div class="panel"><h2>Pull Ollama model</h2>
+    <div class="row"><input id="mdl" placeholder="e.g. lfm2:1.2b" style="background:#0e0f14;border:1px solid var(--line);color:#fff;padding:7px 10px;border-radius:5px;flex:1;max-width:320px"/>
+    <button class="act" onclick="act('pull-model', {model:document.getElementById('mdl').value})">Pull</button></div>
+  </div>
+</section>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => n == null ? '—' : (n > 1e6 ? (n/1e6).toFixed(1)+'M' : n > 1e3 ? (n/1e3).toFixed(1)+'k' : n);
+const money = (n) => n == null ? '—' : '$'+(+n).toFixed(2);
+
+// tab switching
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('section').forEach(s => s.hidden = true);
+  $('#view-' + b.dataset.t).hidden = false;
+  load(b.dataset.t);
+}));
+
+async function get(p){ const r = await fetch(p); return r.json(); }
+async function post(p, body){ const r = await fetch(p, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }
+
+async function act(name, body){
+  $('#act-out').textContent = '…running…';
+  const r = await post('/api/action/'+name, body);
+  $('#act-out').textContent = JSON.stringify(r, null, 2);
+}
+
+async function loadOverview(){
+  const [h, a, f, t] = await Promise.all([get('/api/health'), get('/api/agents'), get('/api/ai-frameworks'), get('/api/tokens')]);
+  $('#ov-mem').textContent = (h.memory?.usedPct ?? 0) + '%';
+  $('#ov-mem-sub').textContent = (h.memory?.freeGB ?? 0) + ' GB free / ' + (h.memory?.totalGB ?? 0) + ' GB';
+  $('#ov-up').textContent = h.uptime_hours ?? '—';
+  const agAlive = (a.frameworks||[]).filter(x=>x.alive).length;
+  $('#ov-ag').textContent = agAlive + '/' + (a.frameworks||[]).length;
+  $('#ov-ag-sub').textContent = (a.frameworks||[]).filter(x=>x.alive).map(x=>x.name).join(', ');
+  const aiAlive = (f.frameworks||[]).filter(x=>x.alive).length;
+  $('#ov-ai').textContent = aiAlive + '/' + (f.frameworks||[]).length;
+  $('#ov-ai-sub').textContent = (f.frameworks||[]).filter(x=>x.alive).map(x=>x.name).join(', ');
+  $('#ov-tmp').textContent = h.temp_files_gb ?? '—';
+  $('#ov-start').textContent = h.startup_programs ?? '—';
+  $('#ov-tok').textContent = fmt(t.totals?.tokens);
+  $('#ov-tok-sub').textContent = (t.totals?.calls||0) + ' calls';
+  $('#ov-cost').textContent = money(t.totals?.cost_usd);
+  // heatmap (last 30)
+  const heat = $('#heat'); heat.innerHTML = '';
+  const last30 = (t.heatmap || []).slice(0, 30).reverse();
+  const max = Math.max(1, ...last30.map(d => d.c));
+  for(let i=0;i<30;i++){
+    const d = last30[i];
+    const v = d ? Math.min(4, Math.ceil(4 * d.c / max)) : 0;
+    const s = document.createElement('span');
+    if (v>0) s.dataset.v = v;
+    s.title = d ? (d.d+' · '+d.c+' calls') : '';
+    heat.appendChild(s);
+  }
+}
+
+async function loadHealth(){
+  const h = await get('/api/health');
+  $('#health-body').innerHTML = `
+    <table>
+      <tr><th>Host</th><td>${h.host}</td></tr>
+      <tr><th>Platform</th><td>${h.platform}</td></tr>
+      <tr><th>CPUs</th><td>${h.cpus}</td></tr>
+      <tr><th>Memory</th><td>${h.memory?.usedPct}% used, ${h.memory?.freeGB} GB free of ${h.memory?.totalGB} GB</td></tr>
+      <tr><th>Uptime</th><td>${h.uptime_hours} hours</td></tr>
+      <tr><th>Load avg</th><td>${h.loadavg_1m}</td></tr>
+      <tr><th>Temp files</th><td>${h.temp_files_gb} GB recoverable</td></tr>
+      <tr><th>Startup programs</th><td>${h.startup_programs}</td></tr>
+    </table>`;
+}
+
+async function loadStorage(){
+  const s = await get('/api/storage');
+  $('#drives tbody').innerHTML = (s.drives||[]).map(d => {
+    const total = (d.UsedGB + d.FreeGB);
+    const pct = total ? Math.round(100*d.UsedGB/total) : 0;
+    return `<tr><td><b>${d.Name}:</b></td><td>${d.UsedGB}</td><td>${d.FreeGB}</td><td>${d.TotalGB}</td><td>${pct}%<div class="bar"><i style="width:${pct}%"></i></div></td></tr>`;
+  }).join('');
+  $('#bigdirs tbody').innerHTML = (s.biggest_dirs||[]).map(d => `<tr><td>${d.path}</td><td>${d.sizeGB}</td></tr>`).join('');
+}
+
+async function loadTokens(){
+  const t = await get('/api/tokens');
+  $('#t-days').textContent = t.totals?.active_days ?? 0;
+  $('#t-calls').textContent = fmt(t.totals?.calls);
+  $('#t-tok').textContent = fmt(t.totals?.tokens);
+  $('#t-cost').textContent = money(t.totals?.cost_usd);
+  $('#burn tbody').innerHTML = (t.burn||[]).map(b => `<tr><td>${b.agent||''}</td><td>${b.provider||''}</td><td>${b.model||''}</td><td>${b.calls||0}</td><td>${fmt(b.tokens)}</td><td>${money(b.cost)}</td></tr>`).join('') || '<tr><td colspan="6" class="dim">No token data yet — agents haven\\'t logged calls into cost_log.sqlite</td></tr>';
+  $('#lvc tbody').innerHTML = (t.local_vs_cloud||[]).map(v => `<tr><td>${v.verdict}</td><td>${v.n}</td></tr>`).join('') || '<tr><td colspan="2" class="dim">No local-vs-cloud evaluations yet</td></tr>';
+}
+
+async function loadAI(){
+  const [f, c] = await Promise.all([get('/api/ai-frameworks'), get('/api/cloud-providers')]);
+  $('#cloud-table tbody').innerHTML = (c.providers||[]).map(p => {
+    const cls = p.status==='alive'?'ok':(p.status==='no_credits'||p.status==='auth_bad'?'warn':'err');
+    const detail = p.credit ? `credits: ${p.credit.credits}, used: ${p.credit.used}` : (p.status==='no_key'?'no API key configured':'');
+    return `<tr><td>${p.name}</td><td><span class="chip ${cls}">${p.status}</span></td><td>${p.http||''}</td><td>${p.models||''}</td><td class="dim">${detail}</td></tr>`;
+  }).join('');
+  $('#ai-table tbody').innerHTML = (f.frameworks||[]).map(x => `<tr><td>${x.name}</td><td>${x.port||''}</td><td><span class="chip ${x.alive?'ok':'err'}">${x.alive?'alive':'down'}</span></td><td class="dim">${x.models ? x.models.slice(0,3).map(m=>m.name||m).join(', ') : (x.stats ? 'GPU: '+(x.stats.system?.comfyui_version||'') : '')}</td></tr>`).join('');
+  const oll = (f.frameworks||[]).find(x=>x.name==='Ollama');
+  $('#oll tbody').innerHTML = (oll && oll.models ? oll.models : []).map(m => `<tr><td>${m.name}</td><td>${m.size_gb}</td></tr>`).join('');
+}
+
+async function loadAgents(){
+  const a = await get('/api/agents');
+  $('#ag tbody').innerHTML = (a.frameworks||[]).map(x => `<tr><td>${x.name}</td><td class="dim">${x.path}</td><td>${x.skills}</td><td>${x.memory_mb}</td><td><span class="chip ${x.alive?'ok':'err'}">${x.alive?'installed':'missing'}</span></td></tr>`).join('');
+  $('#tasks tbody').innerHTML = (a.scheduled_tasks||[]).map(t => `<tr><td>${t.TaskName}</td><td><span class="chip ${t.State===3?'ok':'err'}">${t.State===3?'ready':t.State}</span></td></tr>`).join('');
+}
+
+async function loadClawboard(){
+  const d = await get('/api/clawboard');
+  const oc = d.openclaw || {}, hm = d.hermes || {};
+  $('#oc-status').textContent = oc.alive ? 'ALIVE' : 'DOWN';
+  $('#oc-status').className = 'chip ' + (oc.alive ? 'ok' : 'err');
+  $('#oc-watchdog').textContent = oc.watchdog ? (oc.watchdog.State === 3 ? 'Ready' : oc.watchdog.State) : 'missing';
+  $('#oc-procs').textContent = (oc.processes||[]).length + ' node process(es)';
+  $('#oc-log').textContent = oc.last_log || '(no log)';
+  $('#hm-status').textContent = hm.alive ? 'ALIVE' : 'DOWN';
+  $('#hm-status').className = 'chip ' + (hm.alive ? 'ok' : 'err');
+  $('#hm-systemd').textContent = hm.systemd_status || 'unknown';
+  $('#hm-procs').textContent = (hm.processes||[]).length ? (hm.processes||[]).join('\n').slice(0,200) : '0';
+  $('#hm-log').textContent = hm.last_log || '(no log)';
+}
+
+async function claw(agent, cmd){
+  $('#claw-out').textContent = `…${agent} ${cmd}…`;
+  const r = await post(`/api/claw/${agent}/${cmd}`, {});
+  $('#claw-out').textContent = JSON.stringify(r, null, 2);
+  setTimeout(loadClawboard, 2000);
+}
+
+function load(tab){
+  if (tab==='overview') loadOverview();
+  if (tab==='health') loadHealth();
+  if (tab==='storage') loadStorage();
+  if (tab==='tokens') loadTokens();
+  if (tab==='ai') loadAI();
+  if (tab==='agents') loadAgents();
+  if (tab==='clawboard') loadClawboard();
+}
+
+// initial + auto-refresh overview every 10s
+loadOverview();
+setInterval(() => { if (!$('#view-overview').hidden) loadOverview(); $('#hdr-time').textContent = new Date().toLocaleTimeString(); }, 10000);
+$('#hdr-time').textContent = new Date().toLocaleTimeString();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "abu-pc-manager",
+  "version": "0.1.0",
+  "description": "ABUZ8 Master PC Manager — fuses Microsoft PC Manager health/cleanup with token/agent/AI-framework monitoring",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "express": "^4.22.1"
+  }
+}
